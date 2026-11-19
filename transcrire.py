@@ -13,7 +13,22 @@ import uuid
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import av
 from faster_whisper import WhisperModel
+
+# PyAV 15+ a supprimé l'option metadata_errors que faster-whisper passe encore à av.open.
+_av_open = av.open
+
+
+def _av_open_compat(*args, **kwargs):
+    try:
+        return _av_open(*args, **kwargs)
+    except TypeError:
+        kwargs.pop("metadata_errors", None)
+        return _av_open(*args, **kwargs)
+
+
+av.open = _av_open_compat
 
 PORT = int(os.environ.get("TRANSCRIRE_PORT", "8765"))
 MODEL_NAME = os.environ.get("WHISPER_MODEL", "large-v3-turbo")  # précis et ~8x plus rapide que large-v3
